@@ -44,36 +44,95 @@ It supports:
 - Pytest
 - (Optional) OpenAI / Anthropic / Local LLMs
 
-## Quickstart (local)
+## 🚀 Quick Start (local)
+
+### Prerequisites
+
+- Python 3.11+
+- Docker & Docker Compose (optional)
+- Groq API Key ([Get one free here](https://console.groq.com))
+
+### Local Setup
+1. **Create virtual environment**
 ```bash
 python -m venv venv
 venv\Scripts\activate
+```
+
+2. **Install dependencies**
+```bash
 pip install -r requirements.txt
+```
+
+3. **Configure environment**
+```bash
+cp .env.example .env
+# Edit and add your GROQ_API_KEY
+```
+
+4. **Run the application**
+```bash
 uvicorn app.main:app --reload
 ```
 
-API docs: http://localhost:8000/docs
+### Docker Setup
 
-## Run tests
-```
-pytest -q
+1. **Configure environment**
+```bash
+cp .env.example .env
+# Edit .env and add your GROQ_API_KEY
 ```
 
-## LLM Integration
-By default, the server uses a mock LLM adapter that echoes user input. To integrate a real provider, set the environment variable `LLM_PROVIDER` and implement provider logic in `app/services/llm_service.py`.
+2. **Start services**
+```bash
+docker-compose up
+```
 
-## RAG
-Upload documents via:
-    POST /conversations/{conversation_id}/documents/upload
-Provide a text file; the service will chunk and store it for naive retrieval.
+## 📚 API Documentation
 
-## Docker
-Build & run:
-```
-docker build -t bot-gpt-backend
-docker run -p 8000:8000 bot-gpt-backend
-```
-Or with docker-compose:
-```
-docker-compose up --build
-```
+Once running, visit:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+
+## 💡 Key Design Decisions
+
+### 1. **Tech Stack**
+- **FastAPI**: Modern, fast, with automatic API documentation
+- **SQLAlchemy**: Flexible ORM supporting multiple databases
+- **Groq API**: Free tier with fast Llama 3 inference
+- **Pydantic**: Data validation and settings management
+
+### 2. **Context Management**
+- **Sliding Window**: Keeps recent messages within token limits
+- **Token Counting**: Uses tiktoken for accurate token estimation
+- **System Prompts**: Optimized for clarity and token efficiency
+
+### 3. **RAG Implementation**
+- **Simple Chunking**: Word-based with configurable overlap
+- **Keyword Retrieval**: TF-IDF style matching (no vector DB required)
+- **Context Injection**: Retrieved chunks added to system prompt
+
+### 4. **Error Handling**
+- **Retry Logic**: Exponential backoff for API failures
+- **Custom Exceptions**: Clear error messages for debugging
+- **Graceful Degradation**: Fallback responses when LLM unavailable
+
+### 5. **Scalability**
+- **Stateless Design**: Easy horizontal scaling
+- **Database Indexing**: Optimized queries for user_id and timestamps
+- **Connection Pooling**: Efficient database connections
+
+
+## 🔐 Security Notes
+
+For production deployment:
+- Use environment variables for secrets
+- Enable HTTPS/TLS
+- Implement authentication (JWT, OAuth)
+- Rate limiting on API endpoints
+- Input validation and sanitization
+- CORS configuration for specific origins
+
+
+---
