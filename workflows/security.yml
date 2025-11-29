@@ -1,0 +1,60 @@
+name: Security Scans
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"   # Weekly
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit (Python Dependency Security)
+        run: pip-audit --output pip_audit_report.json --format json
+      - name: Upload pip-audit Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: pip_audit_report.json
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          fs-path: .
+          format: json
+          output: trivy_fs.json
+
+      - name: Upload Trivy FS Scan
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-report
+          path: trivy_fs.json
+
+      - name: Build Docker Image
+        run: docker build -t security-scan-image .
+
+      - name: Run Trivy Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: security-scan-image
+          format: json
+          output: trivy_image.json
+
+      - name: Upload Trivy Image Scan Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy_image.json
