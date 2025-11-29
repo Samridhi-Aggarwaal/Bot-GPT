@@ -1,12 +1,51 @@
+"""
+BOT GPT - FastAPI Application
+"""
 from fastapi import FastAPI
-from app.api import conversations, documents
-from app.db.database import init_db
+from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
+from app.database import init_db
+from app.api import conversations, messages, documents
 
-app = FastAPI(title="BOT GPT Backend")
+# Initialize FastAPI app
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Conversational AI Backend with LLM Integration and RAG Support"
+)
 
-app.include_router(conversations.router, prefix="/conversations", tags=["conversations"])
-app.include_router(documents.router, prefix="/conversations/{conversation_id}/documents", tags=["documents"])
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(conversations.router)
+app.include_router(messages.router)
+app.include_router(documents.router)
+
 
 @app.on_event("startup")
-def startup():
+def startup_event():
+    """Initialize database on startup"""
     init_db()
+
+
+@app.get("/")
+def root():
+    """Root endpoint"""
+    return {
+        "message": "Welcome to BOT GPT API",
+        "version": settings.APP_VERSION,
+        "docs": "/docs"
+    }
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
